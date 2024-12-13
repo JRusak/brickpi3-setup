@@ -75,5 +75,3 @@ update_system
 create_user_with_sudo $user $password
 
 run_script_as_user $user $pi_script
-
-exec su - $user
