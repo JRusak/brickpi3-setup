@@ -33,7 +33,8 @@ create_user_with_sudo() {
     # Check if user already exists
     if id "$username" >/dev/null 2>&1; then
         echo "User '$username' already exists."
-        return 1
+        echo "Recreating '$username'"
+        sudo userdel -r pi
     fi
 
     # Add new user
@@ -68,12 +69,6 @@ run_script_as_user() {
     sudo -u "$username" sh -c "$(wget -qO- $script_path)"
 }
 
-login_as_user() {
-    local username=$1
-
-    su - $username
-}
-
 main() {
     update_time
     update_system
@@ -82,7 +77,7 @@ main() {
     
     run_script_as_user $user $pi_script
 
-    login_as_user $user
+    exec su - $user
 }
 
 main
