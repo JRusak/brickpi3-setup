@@ -28,7 +28,7 @@ VERSION=$(sed 's/\.//g' tmpversion)
 delete_file tmpversion                           
 
 feedback "wiringPi VERSION is $VERSION"
-if [ $VERSION -eq '310' ]; then
+if [ -n "$VERSION" ] && [ $VERSION -eq '310' ]; then
 
     feedback "FOUND WiringPi Version 3.10 No installation needed."
 else
