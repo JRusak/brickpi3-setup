@@ -5,7 +5,7 @@ BRICKPI3_DIR=$PIHOME/BrickPi3
 UPDATE_BRICKPI_SCRIPT=$BRICKPI3_DIR/Install/update_brickpi3.sh
 FLASH_FIRMWARE_SCRIPT=$BRICKPI3_DIR/Firmware/brickpi3samd_flash_firmware.sh
 
-BRICKPI_REPO=git@github.com:JRusak/brickpi-setup.git
+BRICKPI_REPO=git@github.com:JRusak/brickpi3-setup.git
 
 FW_VERSION_SCRIPT=$BRICKPI3_DIR/Software/Python/Examples/Read_Info.py
 

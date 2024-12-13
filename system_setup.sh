@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pi_script=https://raw.githubusercontent.com/JRusak/brickpi-setup/refs/heads/main/pi_script.sh
+pi_script=https://raw.githubusercontent.com/JRusak/brickpi3-setup/refs/heads/main/pi_script.sh
 user=pi
 password=pi
 
