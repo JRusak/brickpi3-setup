@@ -69,15 +69,11 @@ run_script_as_user() {
     sudo -u "$username" sh -c "$(wget -qO- $script_path)"
 }
 
-main() {
-    update_time
-    update_system
+update_time
+update_system
 
-    create_user_with_sudo $user $password
-    
-    run_script_as_user $user $pi_script
+create_user_with_sudo $user $password
 
-    exec su - $user
-}
+run_script_as_user $user $pi_script
 
-main
+su - $user
