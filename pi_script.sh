@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PIHOME=/home/pi
 BRICKPI3_DIR=$PIHOME/BrickPi3
