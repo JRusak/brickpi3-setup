@@ -10,13 +10,6 @@ BRICKPI_REPO=https://github.com/JRusak/brickpi3-setup.git
 FW_VERSION_SCRIPT=$BRICKPI3_DIR/Software/Python/Examples/Read_Info.py
 
 install_git() {
-    # Check if Git is already installed
-    if command -v git &> /dev/null; then
-        echo "Git is already installed."
-        git --version
-        return 0
-    fi
-
     echo
     echo "Installing Git..."
     echo
