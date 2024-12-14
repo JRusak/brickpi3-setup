@@ -45,7 +45,7 @@ create_user_with_sudo() {
 
     # Add user to groups
     sudo usermod -aG \
-        sudo,adm,dialout,cdrom,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio,lpadmin \
+        sudo,adm,dialout,cdrom,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio \
         "$username"
 
     # Add the NOPASSWD line to the sudoers file
