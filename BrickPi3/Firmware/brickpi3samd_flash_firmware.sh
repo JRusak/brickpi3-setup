@@ -1,6 +1,6 @@
 #! /bin/bash
+
 OPENOCD_SCRIPTS=/usr/local/share/openocd/scripts
-INTERFACE_PATH=/usr/local/share/openocd/scripts/interface
 
 # check the RPi version
 RPI_VERSION=$(python3 -c "import auto_detect_rpi; print (auto_detect_rpi.getRPIGenerationCode())")
@@ -37,7 +37,7 @@ else
         echo "** Updating the BrickPi3 Firmware with '$FIRMWARE_FILE'"
 
         # flash the firmware
-        sudo openocd -f interface/$INTERFACE_FILE -c "transport select swd; set CHIPNAME at91samd21j18; source [find target/at91samdXX.cfg]; adapter speed 50; adapter srst delay 100; adapter srst pulse_width 100" -c "init; targets; reset halt; program $FIRMWARE_FILE verify; reset" -c "shutdown"
+        sudo openocd -f $OPENOCD_SCRIPTS/interface/$INTERFACE_FILE -c "transport select swd; set CHIPNAME at91samd21j18; source [find target/at91samdXX.cfg]; adapter speed 50; adapter srst delay 100; adapter srst pulse_width 100" -c "init; targets; reset halt; program $FIRMWARE_FILE verify; reset" -c "shutdown"
         echo
         echo
         echo 'if you see ** Verified OK ** then all is good. If not, please try again. Sometimes it can take a few tries before it works.'
