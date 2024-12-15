@@ -5,7 +5,7 @@ INTERFACE_PATH=/usr/local/share/openocd/scripts/interface
 # check the RPi version
 RPI_VERSION=$(python3 -c "import auto_detect_rpi; print (auto_detect_rpi.getRPIGenerationCode())")
 
-echo "Found "+$RPI_VERSION
+echo "Found "$RPI_VERSION
 
 INTERFACE_FILE="none"
 if [ "$RPI_VERSION" == "RPI1" ] || [ "$RPI_VERSION" == "RPI0" ]; then
