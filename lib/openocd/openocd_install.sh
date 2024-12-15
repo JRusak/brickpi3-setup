@@ -1,6 +1,6 @@
 #! /bin/bash
 
-PIHOME=/home/pi
+sudo apt install -y libc6:armhf libusb-1.0-0:armhf
 
 cd lib/openocd
 
