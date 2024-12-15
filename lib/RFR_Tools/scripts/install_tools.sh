@@ -110,9 +110,7 @@ update_install_aptget() {
                          python3-setuptools \
                          python3-pip \
                          libffi-dev \
-                         nodejs \
-                         libhidapi-hidraw0 \
-                         libcapstone4
+                         nodejs
 }
 
 install_pythons() {
