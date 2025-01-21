@@ -15,3 +15,9 @@ sudo reboot
  ```sh
 curl -kL https://raw.githubusercontent.com/JRusak/brickpi3-setup/refs/heads/main/system_setup.sh | sudo bash
 ```
+
+```sh
+su - pi
+```
+
+password for the "pi" user is also just "pi"
