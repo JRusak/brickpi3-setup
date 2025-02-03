@@ -3,11 +3,14 @@
 PIHOME=/home/pi
 BRICKPI3_DIR=$PIHOME/BrickPi3
 UPDATE_BRICKPI_SCRIPT=$BRICKPI3_DIR/Install/update_brickpi3.sh
-FLASH_FIRMWARE_SCRIPT=$BRICKPI3_DIR/Firmware/brickpi3samd_flash_firmware.sh
+FLASH_FIRMWARE_SCRIPT="$BRICKPI3_DIR/Firmware/"\
+"brickpi3samd_flash_firmware.sh"
 
-BRICKPI_REPO=https://github.com/JRusak/brickpi3-setup.git
+BRICKPI_REPO="https://github.com/JRusak/"\
+"brickpi3-setup.git"
 
-FW_VERSION_SCRIPT=$BRICKPI3_DIR/Software/Python/Examples/Read_Info.py
+FW_VERSION_SCRIPT="$BRICKPI3_DIR/Software/Python/Examples/"\
+"Read_Info.py"
 
 install_git() {
     echo
@@ -27,7 +30,8 @@ install_git() {
 
 get_brickpi_repo() {
     REPO_URL=$1
-    TMP_DIR=$(mktemp -d)     # Temporary directory to clone the repository
+    # Temporary directory to clone the repository
+    TMP_DIR=$(mktemp -d)
     DEST_DIR="$PIHOME"
 
     # Clone the repository into the temporary directory
@@ -43,12 +47,14 @@ get_brickpi_repo() {
         exit 1
     fi
 
-    # Move all files and folders from the cloned repository to the destination directory
+    # Move all files and folders from the cloned
+    # repository to the destination directory
     echo
     echo "Moving contents to $DEST_DIR..."
     echo
     for item in "$TMP_DIR"/*; do
-        # Check if $item exists (in case TMP_DIR is empty or contains no files)
+        # Check if $item exists (in case TMP_DIR
+        # is empty or contains no files)
         if [ -e "$item" ]; then
             mv "$item" "$DEST_DIR"
         fi
@@ -66,8 +72,10 @@ main() {
 
     chmod +x $UPDATE_BRICKPI_SCRIPT
 
-    bash $UPDATE_BRICKPI_SCRIPT --user-local --bypass-gui-installation
-    
+    chmod +x "$UPDATE_BRICKPI_SCRIPT"
+    bash "$UPDATE_BRICKPI_SCRIPT" --user-local \
+        --bypass-gui-installation
+
     chmod +x $FLASH_FIRMWARE_SCRIPT
     bash $FLASH_FIRMWARE_SCRIPT
 

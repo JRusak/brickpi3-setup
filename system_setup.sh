@@ -1,12 +1,15 @@
 #!/bin/sh
 
-pi_script=https://raw.githubusercontent.com/JRusak/brickpi3-setup/refs/heads/main/pi_script.sh
+pi_script="https://raw.githubusercontent.com/JRusak/"\
+"brickpi3-setup/refs/heads/main/pi_script.sh"
 user=pi
 password=pi
 
 update_time() {
     echo "Updating date and time"
-    sudo date -s "$(wget --method=HEAD -qSO- --max-redirect=0 google.com 2>&1 | sed -n 's/^ *Date: *//p')"
+    sudo date -s "$(wget --method=HEAD -qSO- \
+        --max-redirect=0 google.com 2>&1 | sed -n \
+        's/^ *Date: *//p')"
     echo
 }
 
@@ -44,12 +47,13 @@ create_user_with_sudo() {
     echo "$username:$password" | sudo chpasswd
 
     # Add user to groups
-    sudo usermod -aG \
-        sudo,adm,dialout,cdrom,audio,video,plugdev,games,users,input,render,netdev,spi,i2c,gpio \
+    sudo usermod -aG sudo,adm,dialout,cdrom,audio,video,\
+        plugdev,games,users,input,render,netdev,spi,i2c,gpio \
         "$username"
 
     # Add the NOPASSWD line to the sudoers file
-    sudo echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username"
+    sudo echo "$username ALL=(ALL) NOPASSWD: ALL" > \
+        "/etc/sudoers.d/$username"
     sudo chmod 440 "/etc/sudoers.d/$username"
 
     echo "User '$username' created with sudo privileges."
@@ -61,7 +65,7 @@ run_script_as_user() {
 
     # Check if both username and script path are provided
     if [ -z "$username" ] || [ -z "$script_path" ]; then
-        echo "Please provide both a username and the path to the script."
+        echo "Please provide both a username and path."
         return 1
     fi
 
