@@ -37,7 +37,7 @@ create_user_with_sudo() {
     if id "$username" >/dev/null 2>&1; then
         echo "User '$username' already exists."
         echo "Recreating '$username'"
-        sudo userdel -r pi
+        sudo userdel -r "$username" 2>/dev/null
     fi
 
     # Add new user
@@ -47,13 +47,14 @@ create_user_with_sudo() {
     echo "$username:$password" | sudo chpasswd
 
     # Add user to groups
-    sudo usermod -aG sudo,adm,dialout,cdrom,audio,video,\
-        plugdev,games,users,input,render,netdev,spi,i2c,gpio \
+    sudo usermod -aG "sudo,adm,dialout,cdrom,audio,video"\
+",plugdev,games,users,input,render,netdev,spi,i2c,gpio" \
         "$username"
 
     # Add the NOPASSWD line to the sudoers file
-    sudo echo "$username ALL=(ALL) NOPASSWD: ALL" > \
-        "/etc/sudoers.d/$username"
+    echo "$username ALL=(ALL) NOPASSWD: ALL" | \
+    sudo tee "/etc/sudoers.d/$username" >/dev/null
+    
     sudo chmod 440 "/etc/sudoers.d/$username"
 
     echo "User '$username' created with sudo privileges."
