@@ -4,21 +4,26 @@ from __future__ import division
 import time     # import the time library for the sleep function
 import brickpi3 # import the BrickPi3 drivers
 
+from typing import TypeAlias
+from collections.abc import Callable
+
+
+Option: TypeAlias = tuple[str, Callable]
 
 BP = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 
 
-def print_options() -> None:
-    print("1. Motors")
-    print("2. Touch sensor")
-    print("3. Color sensor")
-    print("To exit type 0")
+def print_options(options: list[Option]) -> None:
+    for i, op in enumerate(options):
+        print(f'{i}. {op[0]}')
+
+    print("Press Ctrl+C to exit the program.")
 
 
-def get_option() -> int:
+def get_option_number(options: list[Option]) -> int:
     option = ""
 
-    while not option.isnumeric():
+    while not option.isnumeric() or int(option) not in range(len(options)):
         option = input("Choose the number of what you want to test out: ")
 
     return int(option)
@@ -26,17 +31,16 @@ def get_option() -> int:
 
 def init_test(intro: str) -> None:
     print(intro)
+    print()
+    print("# To stop test press Ctrl+C.")
+    print()
     input("Press any key to start the test")
 
 
 def touch_sensor_test():
-    intro = '''# This code is an example for reading a touch sensor connected to PORT_1 of the BrickPi3
-# 
-# Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
+    intro = '''# Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
 # 
 # Results:  When you run this program, you should see a 0 when the touch sensor is not pressed, and a 1 when the touch sensor is pressed.
-#
-# To stop press Ctrl+C.
 '''
     init_test(intro)
     BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)
@@ -54,20 +58,43 @@ def touch_sensor_test():
         BP.reset_all()        # Unconfigure the sensors, disable the motors, and restore the LED to the control of the BrickPi3 firmware.
 
 
-def main() -> None:
+def color_sensor_test():
+    intro = '''# Hardware: Connect an EV3 color sensor to BrickPi3 sensor port 1.
+# 
+# Results:  When you run this program, the color will be printed.
+'''
+    init_test(intro)
+    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_COLOR_COLOR)
+
+    color = ["none", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"]
+
     try:
-        print_options()
         while True:
-            match get_option():
-                case 0:
-                    BP.reset_all()
-                    exit(0)
-                case 1:
-                    pass
-                case 2:
-                    touch_sensor_test()
-                case _:
-                    pass
+            try:
+                value = BP.get_sensor(BP.PORT_1)
+                print(color[value])                # print the color
+            except brickpi3.SensorError as error:
+                print(error)
+            
+            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+        BP.reset_all()        # Unconfigure the sensors, disable the motors, and restore the LED to the control of the BrickPi3 firmware.
+
+
+def main() -> None:
+    options = [
+        ("Motors", )
+        ("Touch sensor", touch_sensor_test)
+        ("Color sensor", color_sensor_test),
+        ("Infrared sensor", )
+    ]
+
+    try:
+        while True:
+            print_options(options)
+            num = get_option_number(options)
+            options[num][1]()
             
             BP.reset_all()
 
