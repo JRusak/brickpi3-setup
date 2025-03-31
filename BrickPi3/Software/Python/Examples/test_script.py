@@ -41,7 +41,7 @@ def init_test(intro: str) -> None:
 
 def finish_test() -> None:
     BP.reset_all()  # Unconfigure the sensors, disable the motors, and restore the LED to the control of the BrickPi3 firmware.
-    print('\n\n')
+    print('\n')
 
 
 def touch_sensor_test() -> None:
