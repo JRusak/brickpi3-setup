@@ -84,10 +84,10 @@ def color_sensor_test():
 
 def main() -> None:
     options = [
-        ("Motors", )
-        ("Touch sensor", touch_sensor_test)
-        ("Color sensor", color_sensor_test),
-        ("Infrared sensor", )
+        # ("Motors", )
+        ("Touch sensor", touch_sensor_test),
+        ("Color sensor", color_sensor_test)
+        # ("Infrared sensor", )
     ]
 
     try:
