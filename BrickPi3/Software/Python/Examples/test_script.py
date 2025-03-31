@@ -14,6 +14,8 @@ BP = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. BP will be 
 
 
 def print_options(options: list[Option]) -> None:
+    print()
+
     for i, op in enumerate(options):
         print(f'{i}. {op[0]}')
 
@@ -30,11 +32,13 @@ def get_option_number(options: list[Option]) -> int:
 
 
 def init_test(intro: str) -> None:
+    print()
     print(intro)
     print()
     print("# To stop test press Ctrl+C.")
     print()
     input("Press any key to start the test")
+    print()
 
 
 def touch_sensor_test():
