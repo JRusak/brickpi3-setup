@@ -27,6 +27,10 @@ BP_MOTOR_PORTS = [
 ]
 
 
+def get_color_from_color_sensor_value(value) -> str:
+    return ["none", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"][value]
+
+
 def print_options(options: list[Option]) -> None:
     print("Test options:")
 
@@ -74,14 +78,29 @@ def configure_sensor(port) -> None:
     print("Configured.")
 
 
-def test_simple_sensor(port, type) -> None:
+def get_value_parser(parser: str) -> Callable:
+    return {
+        "COLOR": get_color_from_color_sensor_value
+    }.get(parser)
+
+
+def print_value(value, parser: Callable) -> None:
+    if parser:
+        print(parser(value))
+    else:
+        print(value)
+
+
+def test_sensor(port, type, parser_type: str = None) -> None:
+    parser = get_value_parser(parser_type)
+    
     BP.set_sensor_type(port, type)
     configure_sensor(port)
     try:
         while True:
             try:
                 value = BP.get_sensor(port)
-                print(value)
+                print_value(value, parser)
             except brickpi3.SensorError as error:
                 print(error)
             
@@ -98,7 +117,7 @@ def touch_sensor_test() -> None:
 # Results:  When you run this program, you should see a 0 when the touch sensor is not pressed, and a 1 when the touch sensor is pressed.
 '''
     init_test(intro)
-    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)
+    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)
 
 
 def color_sensor_test() -> None:
@@ -108,23 +127,37 @@ def color_sensor_test() -> None:
 # Results:  When you run this program, the color will be printed.
 '''
     init_test(intro)
-    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_COLOR_COLOR)
-    configure_sensor(BP.PORT_1)
+    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_COLOR_COLOR, parser_type="COLOR")
 
-    color = ["none", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"]
 
-    try:
-        while True:
-            try:
-                value = BP.get_sensor(BP.PORT_1)
-                print(color[value])                # print the color
-            except brickpi3.SensorError as error:
-                print(error)
-            
-            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+def gyro_sensor_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 gyro sensor to BrickPi3 sensor port 1.
+# 
+# Results:  When you run this program, the gyro's absolute rotation and rate of rotation will be printed.
+'''
+    init_test(intro)
+    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
 
-    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+
+def infrared_remote_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 infrared sensor to BrickPi3 sensor port 1.
+# 
+# Results:  When you run this program, the infrared remote status will be printed.
+'''
+    init_test(intro)
+    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_REMOTE)
+
+
+def ultrasonic_sensor_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 ultrasonic sensor to BrickPi3 sensor port 1.
+# 
+# Results:  When you run this program, the ultrasonic sensor distance will be printed.
+'''
+    init_test(intro)
+    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
 
 
 def infrared_sensor_test() -> None:
@@ -134,7 +167,7 @@ def infrared_sensor_test() -> None:
 # Results:  When you run this program, the infrared proximity will be printed.
 '''
     init_test(intro)
-    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_PROXIMITY)
+    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_PROXIMITY)
 
 
 def motors_test() -> None:
@@ -147,7 +180,6 @@ def motors_test() -> None:
     init_test(intro)
     BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH) # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
     configure_sensor(BP.PORT_1)
-    
     try:
         print("Press touch sensor on port 1 to run motors")
         value = 0
@@ -231,38 +263,6 @@ def voltages_test() -> None:
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
         finish_test()
-
-
-def gyro_sensor_test() -> None:
-    intro = '''
-# Hardware: Connect an EV3 gyro sensor to BrickPi3 sensor port 1.
-# 
-# Results:  When you run this program, the gyro's absolute rotation and rate of rotation will be printed.
-'''
-    init_test(intro)
-    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
-
-
-def infrared_remote_test() -> None:
-    intro = '''
-# Hardware: Connect an EV3 infrared sensor to BrickPi3 sensor port 1.
-# 
-# Results:  When you run this program, the infrared remote status will be printed.
-'''
-    init_test(intro)
-    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_REMOTE)
-
-
-def ultrasonic_sensor_test() -> None:
-    intro = '''
-# Hardware: Connect an EV3 ultrasonic sensor to BrickPi3 sensor port 1.
-# 
-# Results:  When you run this program, the ultrasonic sensor distance will be printed.
-'''
-    init_test(intro)
-    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
-
-    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM) # Configure for an EV3 ultrasonic sensor.
 
 
 def led_test() -> None:
