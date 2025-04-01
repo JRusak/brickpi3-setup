@@ -327,6 +327,54 @@ def motor_dps_test() -> None:
         finish_test()
 
 
+def motor_position_test() -> None:
+    intro = '''
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+#
+# Results:  When you run this program, other motors will run to match the position of motor {}. Manually rotate motor {}, and motors will follow.
+'''
+    try:
+        print("The test will be held for every motor port of the BrickPi3.")
+        for main_port, number in enumerate(BP_MOTOR_PORTS):
+            print("If you want to quit the test just press Ctrl+C.")
+            init_test(intro.format(number))
+            try:
+                other_ports = [p for p in BP_MOTOR_PORTS if p[0] != main_port]
+                other_ports_sum = sum(p[0] for p in other_ports)
+                try:
+                    for port, _ in BP_MOTOR_PORTS:
+                        BP.offset_motor_encoder(port, BP.get_motor_encoder(port))
+                except IOError as error:
+                    print(error)
+                
+                BP.set_motor_power(main_port, BP.MOTOR_FLOAT)
+                BP.set_motor_limits(other_ports_sum, 50, 200)
+
+                while True:
+                    try:
+                        target = BP.get_motor_encoder(main_port)
+                    except IOError as error:
+                        print(error)
+                    
+                    BP.set_motor_position(other_ports_sum, target)
+                    
+                    try:
+                        status = [f"Target: {target}"]
+                        status.append("  Motor position ")
+                        for p, n in other_ports:
+                            status.append(f" {n}: ", BP.get_motor_encoder(p))
+                        print(''.join(status))
+                    except IOError as error:
+                        print(error)
+
+                    time.sleep(0.02)
+
+            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+                finish_test()
+    except KeyboardInterrupt:
+        finish_test()
+
+
 def read_info() -> None:
     intro = '''
 # Results: Print information about the attached BrickPi3.
@@ -395,7 +443,8 @@ def main() -> None:
     options = [
         ("Motors", motors_test),
         ("Motor encoder", motor_encoder_test),
-        ("Motor DPS"), motor_dps_test),
+        ("Motor DPS", motor_dps_test),
+        ("Motor position", motor_position_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_color_test),
         ("Color sensor (raw)", color_sensor_raw_test),
