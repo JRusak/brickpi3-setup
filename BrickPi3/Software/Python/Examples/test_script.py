@@ -126,13 +126,22 @@ def touch_sensor_test() -> None:
     test_sensor(intro, BP.SENSOR_TYPE.TOUCH)
 
 
-def color_sensor_test() -> None:
+def color_sensor_color_test() -> None:
     intro = '''
 # Hardware: Connect an EV3 color sensor to BrickPi3 sensor {}.
 # 
 # Results:  When you run this program, the color will be printed.
 '''
     test_sensor(intro, BP.SENSOR_TYPE.EV3_COLOR_COLOR, parser_type="COLOR")
+
+
+def color_sensor_raw_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 color sensor to BrickPi3 sensor {}.
+# 
+# Results:  When you run this program, the raw color components will be printed.
+'''
+    test_sensor(intro, BP.SENSOR_TYPE.EV3_COLOR_COLOR_COMPONENTS)
 
 
 def gyro_sensor_test() -> None:
@@ -312,7 +321,8 @@ def main() -> None:
         ("Motors", motors_test),
         ("Motor encoder", motor_encoder_test),
         ("Touch sensor", touch_sensor_test),
-        ("Color sensor", color_sensor_test),
+        ("Color sensor", color_sensor_color_test),
+        ("Color sensor (raw)", color_sensor_raw_test),
         ("Gyro sensor", gyro_sensor_test),
         ("Infrared sensor", infrared_sensor_test),
         ("Infrared remote", infrared_remote_test),
