@@ -58,8 +58,25 @@ def finish_test() -> None:
     print('\n')
 
 
+def configure_sensor(port) -> None:
+    try:
+        BP.get_sensor(port)
+    except brickpi3.SensorError:
+        print("Configuring...")
+        error = True
+        while error:
+            time.sleep(0.1)
+            try:
+                BP.get_sensor(port)
+                error = False
+            except brickpi3.SensorError:
+                error = True
+    print("Configured.")
+
+
 def test_simple_sensor(port, type) -> None:
     BP.set_sensor_type(port, type)
+    configure_sensor(port)
     try:
         while True:
             try:
@@ -92,6 +109,7 @@ def color_sensor_test() -> None:
 '''
     init_test(intro)
     BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_COLOR_COLOR)
+    configure_sensor(BP.PORT_1)
 
     color = ["none", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"]
 
@@ -128,7 +146,8 @@ def motors_test() -> None:
 '''
     init_test(intro)
     BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH) # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
-
+    configure_sensor(BP.PORT_1)
+    
     try:
         print("Press touch sensor on port 1 to run motors")
         value = 0
