@@ -257,14 +257,62 @@ def infrared_remote_test() -> None:
         finish_test()
 
 
+def ultrasonic_sensor_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 ultrasonic sensor to BrickPi3 sensor port 1.
+# 
+# Results:  When you run this program, the ultrasonic sensor distance will be printed.
+'''
+    init_test(intro)
+
+    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM) # Configure for an EV3 ultrasonic sensor.
+
+    try:
+        while True:
+            # BP.get_sensor retrieves a sensor value.
+            # BP.PORT_1 specifies that we are looking for the value of sensor port 1.
+            # BP.get_sensor returns the sensor value (what we want to display).
+            try:
+                value = BP.get_sensor(BP.PORT_1)
+                print(value)                         # print the distance in CM
+            except brickpi3.SensorError as error:
+                print(error)
+            
+            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+        finish_test()
+
+
+def led_test() -> None:
+    intro = '''
+# Results:  When you run this program, the BrickPi3 LED will fade up and down.
+'''
+    init_test(intro)
+
+    try:
+        while True:
+            for i in range(101):    # count from 0-100
+                BP.set_led(i)       # set the LED brightness (0 to 100)
+                time.sleep(0.01)    # delay for 0.1 seconds (100ms) to reduce the Raspberry Pi CPU load and give time to see the LED pulsing.
+            
+            for i in range(101):    # count from 0-100
+                BP.set_led(100 - i) # set the LED brightness (100 to 0)
+                time.sleep(0.01)     # delay for 0.1 seconds (100ms) to reduce the Raspberry Pi CPU load and give time to see the LED pulsing.
+
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+        finish_test()
+
+
 def main() -> None:
     options = [
         ("Motors", motors_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_test),
+        ("Gyro sensor", gyro_sensor_test),
         ("Infrared sensor", infrared_sensor_test),
         ("Infrared remote", infrared_remote_test),
-        ("Gyro sensor", gyro_sensor_test),
+        ("Ultrasonic sensor", ultrasonic_sensor_test),
         ("BrickPi3 info", read_info),
         ("Voltages", voltages_test)
     ]
