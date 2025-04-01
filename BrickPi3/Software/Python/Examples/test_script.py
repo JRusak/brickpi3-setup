@@ -6,7 +6,6 @@ import brickpi3 # import the BrickPi3 drivers
 
 from typing import TypeAlias
 from collections.abc import Callable
-from itertools import permutations
 
 Option: TypeAlias = tuple[str, Callable]
 
@@ -251,8 +250,10 @@ def motors_test() -> None:
             BP.set_motor_power(BP.PORT_A + BP.PORT_B + BP.PORT_C + BP.PORT_D, speed)
             
             try:
-                # Each of the following BP.get_motor_encoder functions returns the encoder value (what we want to display).
-                print("Encoder A: %6d  B: %6d  C: %6d  D: %6d" % (BP.get_motor_encoder(BP.PORT_A), BP.get_motor_encoder(BP.PORT_B), BP.get_motor_encoder(BP.PORT_C), BP.get_motor_encoder(BP.PORT_D)))
+                status = [f"Encoder: "]
+                for p, n in BP_MOTOR_PORTS:
+                    status.append(f" {n:.6f}: ", BP.get_motor_encoder(p))
+                print(''.join(status))
             except IOError as error:
                 print(error)
             
@@ -273,7 +274,10 @@ def motor_encoder_test() -> None:
     try:
         while True:
             try:
-                print("Encoder A: %6d  B: %6d  C: %6d  D: %6d" % (BP.get_motor_encoder(BP.PORT_A), BP.get_motor_encoder(BP.PORT_B), BP.get_motor_encoder(BP.PORT_C), BP.get_motor_encoder(BP.PORT_D)))
+                status = [f"Encoder: "]
+                for p, n in BP_MOTOR_PORTS:
+                    status.append(f" {n:.6f}: ", BP.get_motor_encoder(p))
+                print(''.join(status))
             except IOError as error:
                 print(error)
             
@@ -310,7 +314,6 @@ def motor_dps_test() -> None:
                 BP.set_motor_power(main_port, BP.MOTOR_FLOAT)
 
                 while True:
-                    # The following BP.get_motor_encoder function returns the encoder value
                     try:
                         target = BP.get_motor_encoder(main_port)
                     except IOError as error:
@@ -388,8 +391,7 @@ def motor_power_test() -> None:
             print("If you want to quit the test just press Ctrl+C.")
             init_test(intro.format(number))
             try:
-                other_ports = [p for p in BP_MOTOR_PORTS if p[0] != main_port]
-                other_ports_sum = sum(p[0] for p in other_ports)
+                other_ports_sum = sum(p[0] for p in BP_MOTOR_PORTS if p[0] != main_port)
                 reset_motor_encoders()
 
                 while True:
@@ -414,28 +416,24 @@ def motor_power_test() -> None:
 
 def motor_status_test() -> None:
     intro = '''
-# Hardware: Connect an EV3 or NXT motor to the BrickPi3 motor port {}.
+# Hardware: Connect EV3 or NXT motor(s) to any of the BrickPi3 motor ports.
 #
-# Results:  When you run this program, the status of motor {} will be printed.
+# Results:  When you run this program, the status of each motor will be printed.
 '''
+    init_test(intro)
     try:
-        print("The test will be held for every motor port of the BrickPi3.")
-        for main_port, number in enumerate(BP_MOTOR_PORTS):
-            print("If you want to quit the test just press Ctrl+C.")
-            init_test(intro.format(number))
+        while True:
             try:
-                while True:
-                    try:
-                        status = BP.get_motor_status(main_port)
-                        print(status)
-                    except IOError as error:
-                        print(error)
+                status = ["Motor status "]
+                for p, n in BP_MOTOR_PORTS:
+                    status.append(f" {n}: ", BP.get_motor_status(p))
+                print(''.join(status))
+            except IOError as error:
+                print(error)
 
-                    time.sleep(0.02)
+            time.sleep(0.02)
 
-            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-                finish_test()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
         finish_test()
 
 
