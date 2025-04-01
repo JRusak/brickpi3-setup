@@ -12,6 +12,20 @@ Option: TypeAlias = tuple[str, Callable]
 
 BP = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 
+BP_SENSOR_PORTS = [
+    BP.PORT_1,
+    BP.PORT_2,
+    BP.PORT_3,
+    BP.PORT_4
+]
+
+BP_MOTOR_PORTS = [
+    BP.PORT_A,
+    BP.PORT_B,
+    BP.PORT_C,
+    BP.PORT_D
+]
+
 
 def print_options(options: list[Option]) -> None:
     print("Test options:")
@@ -44,18 +58,12 @@ def finish_test() -> None:
     print('\n')
 
 
-def touch_sensor_test() -> None:
-    intro = '''
-# Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
-# 
-# Results:  When you run this program, you should see a 0 when the touch sensor is not pressed, and a 1 when the touch sensor is pressed.
-'''
-    init_test(intro)
-    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)
+def test_simple_sensor(port, type) -> None:
+    BP.set_sensor_type(port, type)
     try:
         while True:
             try:
-                value = BP.get_sensor(BP.PORT_1)
+                value = BP.get_sensor(port)
                 print(value)
             except brickpi3.SensorError as error:
                 print(error)
@@ -64,6 +72,16 @@ def touch_sensor_test() -> None:
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
         finish_test()
+
+
+def touch_sensor_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
+# 
+# Results:  When you run this program, you should see a 0 when the touch sensor is not pressed, and a 1 when the touch sensor is pressed.
+'''
+    init_test(intro)
+    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)
 
 
 def color_sensor_test() -> None:
@@ -98,19 +116,7 @@ def infrared_sensor_test() -> None:
 # Results:  When you run this program, the infrared proximity will be printed.
 '''
     init_test(intro)
-    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_PROXIMITY)
-
-    try:
-        while True:
-            try:
-                print(BP.get_sensor(BP.PORT_1))   # print the infrared value
-            except brickpi3.SensorError as error:
-                print(error)
-            
-            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
-
-    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_PROXIMITY)
 
 
 def motors_test() -> None:
@@ -135,9 +141,6 @@ def motors_test() -> None:
         speed = 0
         adder = 1
         while True:
-            # BP.get_sensor retrieves a sensor value.
-            # BP.PORT_1 specifies that we are looking for the value of sensor port 1.
-            # BP.get_sensor returns the sensor value.
             try:
                 value = BP.get_sensor(BP.PORT_1)
             except brickpi3.SensorError as error:
@@ -191,8 +194,8 @@ def read_info() -> None:
 
     except brickpi3.FirmwareVersionError as error:
         print(error)
-    
-    finish_test()
+    finally:
+        finish_test()
 
 
 def voltages_test() -> None:
@@ -218,20 +221,7 @@ def gyro_sensor_test() -> None:
 # Results:  When you run this program, the gyro's absolute rotation and rate of rotation will be printed.
 '''
     init_test(intro)
-
-    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
-
-    try:
-        while True:
-            try:
-                print(BP.get_sensor(BP.PORT_1))   # print the gyro sensor values
-            except brickpi3.SensorError as error:
-                print(error)
-            
-            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
-
-    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
 
 
 def infrared_remote_test() -> None:
@@ -241,20 +231,7 @@ def infrared_remote_test() -> None:
 # Results:  When you run this program, the infrared remote status will be printed.
 '''
     init_test(intro)
-
-    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_REMOTE)
-
-    try:
-        while True:
-            try:
-                print(BP.get_sensor(BP.PORT_1))   # print the infrared values
-            except brickpi3.SensorError as error:
-                print(error)
-            
-            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
-
-    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_REMOTE)
 
 
 def ultrasonic_sensor_test() -> None:
@@ -264,24 +241,9 @@ def ultrasonic_sensor_test() -> None:
 # Results:  When you run this program, the ultrasonic sensor distance will be printed.
 '''
     init_test(intro)
+    test_simple_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
 
     BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM) # Configure for an EV3 ultrasonic sensor.
-
-    try:
-        while True:
-            # BP.get_sensor retrieves a sensor value.
-            # BP.PORT_1 specifies that we are looking for the value of sensor port 1.
-            # BP.get_sensor returns the sensor value (what we want to display).
-            try:
-                value = BP.get_sensor(BP.PORT_1)
-                print(value)                         # print the distance in CM
-            except brickpi3.SensorError as error:
-                print(error)
-            
-            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
-
-    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
 
 
 def led_test() -> None:
