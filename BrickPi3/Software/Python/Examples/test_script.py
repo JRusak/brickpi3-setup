@@ -6,6 +6,7 @@ import brickpi3 # import the BrickPi3 drivers
 
 from typing import TypeAlias
 from collections.abc import Callable
+from functools import wraps
 
 
 Option: TypeAlias = tuple[str, Callable]
@@ -84,14 +85,22 @@ def get_value_parser(parser: str) -> Callable:
     }.get(parser)
 
 
-def print_value(value, parser: Callable) -> None:
-    if parser:
-        print(parser(value))
-    else:
-        print(value)
+def parse_value(value, parser: Callable) -> None:
+    return parser(value) if parser else value
 
 
-def test_sensor(intro: str, type, parser_type: str = None) -> None:
+def get_multi_mode_values(port, sensor_type: list[str] ,parser: Callable) -> None:
+    values = []
+
+    for s_t in sensor_type:
+        BP.set_sensor_type(port, s_t)
+        time.sleep(0.02)
+        values.append(BP.get_sensor(port))
+
+    return [parse_value(v, parser) for v in values]
+
+
+def test_sensor(intro: str, sensor_type: str | list[str], parser_type: str = None) -> None:
     try:
         print("The test will be held for every sensor port of the BrickPi3.")
         for port, number in enumerate(BP_SENSOR_PORTS):
@@ -99,13 +108,21 @@ def test_sensor(intro: str, type, parser_type: str = None) -> None:
             init_test(intro.format(str(number)))
             parser = get_value_parser(parser_type)
             
-            BP.set_sensor_type(port, type)
+            if type(sensor_type) is str:
+                BP.set_sensor_type(port, sensor_type)
+            else:
+                BP.set_sensor_type(port, sensor_type[0])
+            
             configure_sensor(port)
             try:
                 while True:
                     try:
-                        value = BP.get_sensor(port)
-                        print_value(value, parser)
+                        if type(sensor_type) is str:
+                            value = BP.get_sensor(port)
+                            print(parse_value(value, parser))
+                        else:
+                            values = get_multi_mode_values(port, sensor_type, parser)
+                            print('   '.join(values))
                     except brickpi3.SensorError as error:
                         print(error)
                     
@@ -142,6 +159,21 @@ def color_sensor_raw_test() -> None:
 # Results:  When you run this program, the raw color components will be printed.
 '''
     test_sensor(intro, BP.SENSOR_TYPE.EV3_COLOR_COLOR_COMPONENTS)
+
+
+def color_sensor_multi_mode_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 color sensor to BrickPi3 sensor {}.
+# 
+# Results:  When you run this program it will rapidly switch between modes, taking readings, and then it will print the values.
+'''
+    sensor_type = [
+        BP.SENSOR_TYPE.EV3_COLOR_REFLECTED,
+        BP.SENSOR_TYPE.EV3_COLOR_AMBIENT,
+        BP.SENSOR_TYPE.EV3_COLOR_COLOR,
+        BP.SENSOR_TYPE.EV3_COLOR_COLOR_COMPONENTS,
+    ]
+    test_sensor(intro, sensor_type)
 
 
 def gyro_sensor_test() -> None:
@@ -323,6 +355,7 @@ def main() -> None:
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_color_test),
         ("Color sensor (raw)", color_sensor_raw_test),
+        ("Color sensor (multi mode)", color_sensor_multi_mode_test),
         ("Gyro sensor", gyro_sensor_test),
         ("Infrared sensor", infrared_sensor_test),
         ("Infrared remote", infrared_remote_test),
