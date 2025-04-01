@@ -222,6 +222,27 @@ def motors_test() -> None:
         finish_test()
 
 
+def motor_encoder_test() -> None:
+    intro = '''
+# Hardware: Connect EV3 or NXT motor(s) to any of the BrickPi3 motor ports.
+# 
+# Results:  When you run this program, you should see the encoder value for each motor. By manually rotating a motor, the count should change by 1 for every degree of rotation.
+'''
+    init_test(intro)
+
+    try:
+        while True:
+            try:
+                print("Encoder A: %6d  B: %6d  C: %6d  D: %6d" % (BP.get_motor_encoder(BP.PORT_A), BP.get_motor_encoder(BP.PORT_B), BP.get_motor_encoder(BP.PORT_C), BP.get_motor_encoder(BP.PORT_D)))
+            except IOError as error:
+                print(error)
+            
+            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+        finish_test()
+
+
 def read_info() -> None:
     intro = '''
 # Results: Print information about the attached BrickPi3.
@@ -289,6 +310,7 @@ def led_test() -> None:
 def main() -> None:
     options = [
         ("Motors", motors_test),
+        ("Motor encoder", motor_encoder_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_test),
         ("Gyro sensor", gyro_sensor_test),
