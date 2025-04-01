@@ -412,6 +412,33 @@ def motor_power_test() -> None:
         finish_test()
 
 
+def motor_status_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 or NXT motor to the BrickPi3 motor port {}.
+#
+# Results:  When you run this program, the status of motor {} will be printed.
+'''
+    try:
+        print("The test will be held for every motor port of the BrickPi3.")
+        for main_port, number in enumerate(BP_MOTOR_PORTS):
+            print("If you want to quit the test just press Ctrl+C.")
+            init_test(intro.format(number))
+            try:
+                while True:
+                    try:
+                        status = BP.get_motor_status(main_port)
+                        print(status)
+                    except IOError as error:
+                        print(error)
+
+                    time.sleep(0.02)
+
+            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+                finish_test()
+    except KeyboardInterrupt:
+        finish_test()
+
+
 def read_info() -> None:
     intro = '''
 # Results: Print information about the attached BrickPi3.
@@ -483,6 +510,7 @@ def main() -> None:
         ("Motor DPS", motor_dps_test),
         ("Motor position", motor_position_test),
         ("Motor power", motor_power_test),
+        ("Motor status", motor_status_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_color_test),
         ("Color sensor (raw)", color_sensor_raw_test),
