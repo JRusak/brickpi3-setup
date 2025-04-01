@@ -211,12 +211,36 @@ def voltages_test() -> None:
         finish_test()
 
 
+def gyro_sensor_test() -> None:
+    intro = '''
+# Hardware: Connect an EV3 gyro sensor to BrickPi3 sensor port 1.
+# 
+# Results:  When you run this program, the gyro's absolute rotation and rate of rotation will be printed.
+'''
+    init_test(intro)
+
+    BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
+
+    try:
+        while True:
+            try:
+                print(BP.get_sensor(BP.PORT_1))   # print the gyro sensor values
+            except brickpi3.SensorError as error:
+                print(error)
+            
+            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+        finish_test()
+
+
 def main() -> None:
     options = [
         ("Motors", motors_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_test),
         ("Infrared sensor", infrared_sensor_test),
+        ("Gyro sensor", gyro_sensor_test),
         ("BrickPi3 info", read_info),
         ("Voltages", voltages_test)
     ]
