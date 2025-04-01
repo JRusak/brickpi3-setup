@@ -313,6 +313,7 @@ def main() -> None:
         ("Infrared sensor", infrared_sensor_test),
         ("Infrared remote", infrared_remote_test),
         ("Ultrasonic sensor", ultrasonic_sensor_test),
+        ("LED", led_test),
         ("BrickPi3 info", read_info),
         ("Voltages", voltages_test)
     ]
