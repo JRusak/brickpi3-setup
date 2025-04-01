@@ -283,6 +283,14 @@ def motor_encoder_test() -> None:
         finish_test()
 
 
+def reset_motor_encoders() -> None:
+    try:
+        for port, _ in BP_MOTOR_PORTS:
+            BP.offset_motor_encoder(port, BP.get_motor_encoder(port))
+    except IOError as error:
+        print(error)
+
+
 def motor_dps_test() -> None:
     intro = '''
 # Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
@@ -296,11 +304,8 @@ def motor_dps_test() -> None:
             init_test(intro.format(number))
             try:
                 other_ports = [p for p in BP_MOTOR_PORTS if p[0] != main_port]
-                try:
-                    for port, _ in BP_MOTOR_PORTS:
-                        BP.offset_motor_encoder(port, BP.get_motor_encoder(port))
-                except IOError as error:
-                    print(error)
+                other_ports_sum = sum(p[0] for p in other_ports)
+                reset_motor_encoders()
                 
                 BP.set_motor_power(main_port, BP.MOTOR_FLOAT)
 
@@ -311,7 +316,7 @@ def motor_dps_test() -> None:
                     except IOError as error:
                         print(error)
                     
-                    BP.set_motor_dps(sum(p[0] for p in other_ports), target)
+                    BP.set_motor_dps(other_ports_sum, target)
                     
                     status = [f"Target Degrees Per Second: {target}"]
                     status.append("  Motor status ")
@@ -341,11 +346,7 @@ def motor_position_test() -> None:
             try:
                 other_ports = [p for p in BP_MOTOR_PORTS if p[0] != main_port]
                 other_ports_sum = sum(p[0] for p in other_ports)
-                try:
-                    for port, _ in BP_MOTOR_PORTS:
-                        BP.offset_motor_encoder(port, BP.get_motor_encoder(port))
-                except IOError as error:
-                    print(error)
+                reset_motor_encoders()
                 
                 BP.set_motor_power(main_port, BP.MOTOR_FLOAT)
                 BP.set_motor_limits(other_ports_sum, 50, 200)
@@ -366,6 +367,42 @@ def motor_position_test() -> None:
                         print(''.join(status))
                     except IOError as error:
                         print(error)
+
+                    time.sleep(0.02)
+
+            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+                finish_test()
+    except KeyboardInterrupt:
+        finish_test()
+
+
+def motor_power_test() -> None:
+    intro = '''
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+#
+# Results:  When you run this program, motors' power will be controlled by the position of motor {}. Manually rotate motor {}, and motors' power will change.
+'''
+    try:
+        print("The test will be held for every motor port of the BrickPi3.")
+        for main_port, number in enumerate(BP_MOTOR_PORTS):
+            print("If you want to quit the test just press Ctrl+C.")
+            init_test(intro.format(number))
+            try:
+                other_ports = [p for p in BP_MOTOR_PORTS if p[0] != main_port]
+                other_ports_sum = sum(p[0] for p in other_ports)
+                reset_motor_encoders()
+
+                while True:
+                    try:
+                        power = BP.get_motor_encoder(main_port) / 10
+                        if power > 100:
+                            power = 100
+                        elif power < -100:
+                            power = -100
+                    except IOError as error:
+                        print(error)
+                        power = 0
+                    BP.set_motor_power(other_ports_sum, power)
 
                     time.sleep(0.02)
 
@@ -445,6 +482,7 @@ def main() -> None:
         ("Motor encoder", motor_encoder_test),
         ("Motor DPS", motor_dps_test),
         ("Motor position", motor_position_test),
+        ("Motor power", motor_power_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_color_test),
         ("Color sensor (raw)", color_sensor_raw_test),
