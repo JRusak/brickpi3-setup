@@ -13,10 +13,10 @@ Option: TypeAlias = tuple[str, Callable]
 BP = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 
 BP_SENSOR_PORTS = [
-    BP.PORT_1,
-    BP.PORT_2,
-    BP.PORT_3,
-    BP.PORT_4
+    (BP.PORT_1, 1),
+    (BP.PORT_2, 2),
+    (BP.PORT_3, 3),
+    (BP.PORT_4, 4)
 ]
 
 BP_MOTOR_PORTS = [
@@ -91,83 +91,84 @@ def print_value(value, parser: Callable) -> None:
         print(value)
 
 
-def test_sensor(port, type, parser_type: str = None) -> None:
-    parser = get_value_parser(parser_type)
-    
-    BP.set_sensor_type(port, type)
-    configure_sensor(port)
+def test_sensor(intro: str, type, parser_type: str = None) -> None:
     try:
-        while True:
-            try:
-                value = BP.get_sensor(port)
-                print_value(value, parser)
-            except brickpi3.SensorError as error:
-                print(error)
+        print("The test will be held for every sensor port of the BrickPi3.")
+        for port, number in enumerate(BP_SENSOR_PORTS):
+            print("If you want to quit the test just press Ctrl+C.")
+            init_test(intro.format(str(number)))
+            parser = get_value_parser(parser_type)
             
-            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+            BP.set_sensor_type(port, type)
+            configure_sensor(port)
+            try:
+                while True:
+                    try:
+                        value = BP.get_sensor(port)
+                        print_value(value, parser)
+                    except brickpi3.SensorError as error:
+                        print(error)
+                    
+                    time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
 
-    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+                finish_test()
+    except KeyboardInterrupt:
         finish_test()
 
 
 def touch_sensor_test() -> None:
     intro = '''
-# Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
+# Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 {}.
 # 
 # Results:  When you run this program, you should see a 0 when the touch sensor is not pressed, and a 1 when the touch sensor is pressed.
 '''
-    init_test(intro)
-    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)
+    test_sensor(intro, BP.SENSOR_TYPE.TOUCH)
 
 
 def color_sensor_test() -> None:
     intro = '''
-# Hardware: Connect an EV3 color sensor to BrickPi3 sensor port 1.
+# Hardware: Connect an EV3 color sensor to BrickPi3 sensor {}.
 # 
 # Results:  When you run this program, the color will be printed.
 '''
-    init_test(intro)
-    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_COLOR_COLOR, parser_type="COLOR")
+    test_sensor(intro, BP.SENSOR_TYPE.EV3_COLOR_COLOR, parser_type="COLOR")
 
 
 def gyro_sensor_test() -> None:
     intro = '''
-# Hardware: Connect an EV3 gyro sensor to BrickPi3 sensor port 1.
+# Hardware: Connect an EV3 gyro sensor to BrickPi3 sensor {}.
 # 
 # Results:  When you run this program, the gyro's absolute rotation and rate of rotation will be printed.
 '''
-    init_test(intro)
-    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
+    test_sensor(intro, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
 
 
 def infrared_remote_test() -> None:
     intro = '''
-# Hardware: Connect an EV3 infrared sensor to BrickPi3 sensor port 1.
+# Hardware: Connect an EV3 infrared sensor to BrickPi3 sensor {}.
 # 
 # Results:  When you run this program, the infrared remote status will be printed.
 '''
-    init_test(intro)
-    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_REMOTE)
+    test_sensor(intro, BP.SENSOR_TYPE.EV3_INFRARED_REMOTE)
 
 
 def ultrasonic_sensor_test() -> None:
     intro = '''
-# Hardware: Connect an EV3 ultrasonic sensor to BrickPi3 sensor port 1.
+# Hardware: Connect an EV3 ultrasonic sensor to BrickPi3 sensor {}.
 # 
 # Results:  When you run this program, the ultrasonic sensor distance will be printed.
 '''
-    init_test(intro)
-    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
+    test_sensor(intro, BP.SENSOR_TYPE.EV3_ULTRASONIC_CM)
 
 
 def infrared_sensor_test() -> None:
     intro = '''
-# Hardware: Connect an EV3 infrared sensor to BrickPi3 sensor port 1.
+# Hardware: Connect an EV3 infrared sensor to BrickPi3 sensor {}.
 # 
 # Results:  When you run this program, the infrared proximity will be printed.
 '''
-    init_test(intro)
-    test_sensor(BP.PORT_1, BP.SENSOR_TYPE.EV3_INFRARED_PROXIMITY)
+    test_sensor(intro, BP.SENSOR_TYPE.EV3_INFRARED_PROXIMITY)
 
 
 def motors_test() -> None:
