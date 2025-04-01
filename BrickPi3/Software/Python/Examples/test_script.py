@@ -167,12 +167,58 @@ def motors_test() -> None:
         finish_test()
 
 
+def read_info() -> None:
+    intro = '''
+# Results: Print information about the attached BrickPi3.
+'''
+    print(intro)
+    print()
+    
+    try:
+        # Each of the following BP.get functions return a value that we want to display.
+        print("Manufacturer    : ", BP.get_manufacturer()    ) # read and display the serial number
+        print("Board           : ", BP.get_board()           ) # read and display the serial number
+        print("Serial Number   : ", BP.get_id()              ) # read and display the serial number
+        print("Hardware version: ", BP.get_version_hardware()) # read and display the hardware version
+        print("Firmware version: ", BP.get_version_firmware()) # read and display the firmware version
+        print("Battery voltage : ", BP.get_voltage_battery() ) # read and display the current battery voltage
+        print("9v voltage      : ", BP.get_voltage_9v()      ) # read and display the current 9v regulator voltage
+        print("5v voltage      : ", BP.get_voltage_5v()      ) # read and display the current 5v regulator voltage
+        print("3.3v voltage    : ", BP.get_voltage_3v3()     ) # read and display the current 3.3v regulator voltage
+        
+    except IOError as error:
+        print(error)
+
+    except brickpi3.FirmwareVersionError as error:
+        print(error)
+    
+    finish_test()
+
+
+def voltages_test() -> None:
+    intro = '''
+# Results: Print the voltages of the BrickPi3.
+'''
+    init_test(intro)
+
+    try:
+        while True:
+            print("Battery voltage: %6.3f  9v voltage: %6.3f  5v voltage: %6.3f  3.3v voltage: %6.3f" % (BP.get_voltage_battery(), BP.get_voltage_9v(), BP.get_voltage_5v(), BP.get_voltage_3v3())) # read and display the current voltages
+            
+            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+        finish_test()
+
+
 def main() -> None:
     options = [
         ("Motors", motors_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_test),
-        ("Infrared sensor", infrared_sensor_test)
+        ("Infrared sensor", infrared_sensor_test),
+        ("BrickPi3 info", read_info),
+        ("Voltages", voltages_test)
     ]
 
     try:
