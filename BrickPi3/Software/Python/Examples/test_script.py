@@ -9,6 +9,7 @@ from collections.abc import Callable
 from functools import wraps
 
 Option: TypeAlias = tuple[str, Callable]
+Port: TypeAlias = tuple[int, str]
 
 BP = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 
@@ -62,16 +63,16 @@ def finish_test() -> None:
     print('\n')
 
 
-def configure_sensor(port) -> None:
+def configure_sensor(port_number: int) -> None:
     try:
-        BP.get_sensor(port)
+        BP.get_sensor(port_number)
     except brickpi3.SensorError:
         print("Configuring...")
         error = True
         while error:
             time.sleep(0.1)
             try:
-                BP.get_sensor(port)
+                BP.get_sensor(port_number)
                 error = False
             except brickpi3.SensorError:
                 error = True
@@ -84,41 +85,73 @@ def get_value_parser(parser: str) -> Callable:
     }.get(parser)
 
 
-def parse_value(value, parser: Callable) -> None:
+def parse_value(value: any, parser: Callable) -> None:
     return parser(value) if parser else value
 
 
-def get_multi_mode_values(port, sensor_type: list[int] ,parser: Callable) -> None:
+def get_multi_mode_values(port_number: int, sensor_type: list[int], parser: Callable) -> None:
     values = []
 
     for s_t in sensor_type:
-        BP.set_sensor_type(port, s_t)
+        BP.set_sensor_type(port_number, s_t)
         time.sleep(0.02)
-        values.append(BP.get_sensor(port))
+        values.append(BP.get_sensor(port_number))
 
-    return [parse_value(v, parser) for v in values]
+    return [parse_value(v, parser) for v in values]   
 
 
-def run_for_every_port(port_type):
-    def decorator(fun):
+def print_available_ports(ports: list[Port]) -> None:
+    print("Available ports:",*[p[1] for p in ports])
+
+
+def get_ports(port_type: str) -> list[Port]:
+    return {
+        "sensor": BP_SENSOR_PORTS,
+        "motor": BP_MOTOR_PORTS
+    }.get(port_type, [])
+
+
+def get_port_decision(ports: list[Port]) -> str:
+    decision = ""
+
+    while decision != "all" and decision not in [p[1] for p in ports]:
+        decision = input("Choose port or type 'all' if you want to run tests for all ports: ")
+
+    return decision
+
+
+def run_for_specific_port(port_type: str):
+    def decorator(fun: Callable):
         @wraps(fun)
         def wrapper(*args, **kwargs):
-            ports = BP_SENSOR_PORTS if port_type == "sensor" else BP_MOTOR_PORTS
+            ports = get_ports(port_type)
             try:
-                print()
-                print("The test will be held for every {} port of the BrickPi3.".format(port_type))
-                for port_number, port_name in ports:
+                while True:
+                    print()
+                    print_available_ports(ports)
                     print("If you want to quit the test just press Ctrl+C.")
-                    kwargs["port_number"] = port_number
-                    kwargs["port_name"] = port_name
-                    fun(*args, **kwargs)
+                    decision = get_port_decision(ports)
+                    if (decision == "all"):
+                        print("The test will be held for every {} port of the BrickPi3.".format(port_type))
+                        for port_number, port_name in ports:
+                            kwargs["port_number"] = port_number
+                            kwargs["port_name"] = port_name
+                            fun(*args, **kwargs)
+                        return
+                    else:
+                        for p in ports:
+                            if p[1] == decision:
+                                kwargs["port_number"] = p[0]
+                                kwargs["port_name"] = p[1]
+                                fun(*args, **kwargs)
+                                break
             except KeyboardInterrupt:
                 finish_test()
         return wrapper
     return decorator
 
 
-@run_for_every_port("sensor")
+@run_for_specific_port("sensor")
 def test_sensor(
     intro: str,
     sensor_type: int | list[int],
@@ -231,7 +264,7 @@ def infrared_sensor_test() -> None:
     test_sensor(intro, BP.SENSOR_TYPE.EV3_INFRARED_PROXIMITY)
 
 
-def motors_test() -> None:
+def motors_touch_sensor_test() -> None:
     intro = '''
 # Hardware: Connect EV3 or NXT motor(s) to any of the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
 #           Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
@@ -270,13 +303,31 @@ def motors_test() -> None:
             # Set the motor speed for all four motors
             BP.set_motor_power(BP.PORT_A + BP.PORT_B + BP.PORT_C + BP.PORT_D, speed)
             
-            try:
-                status = [f"Encoder: "]
-                for p, n in BP_MOTOR_PORTS:
-                    status.append(f" {n}: {BP.get_motor_encoder(p)}")
-                print(''.join(status))
-            except IOError as error:
-                print(error)
+            status = get_status_msg(
+                "Encoder: ",
+                BP_MOTOR_PORTS,
+                BP.get_motor_encoder
+            )
+            print(status)
+            
+            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+
+    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+        finish_test()
+
+
+def motors_readings(intro: str, msg_start: str, test_function: Callable) -> None:
+    init_test(intro)
+    reset_motor_encoders()
+
+    try:
+        while True:
+            status = get_status_msg(
+                msg_start,
+                BP_MOTOR_PORTS,
+                test_function
+            )
+            print(status)
             
             time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
 
@@ -290,152 +341,7 @@ def motor_encoder_test() -> None:
 # 
 # Results:  When you run this program, you should see the encoder value for each motor. By manually rotating a motor, the count should change by 1 for every degree of rotation.
 '''
-    init_test(intro)
-
-    try:
-        reset_motor_encoders()
-
-        while True:
-            try:
-                status = [f"Encoder: "]
-                for p, n in BP_MOTOR_PORTS:
-                    status.append(f" {n}: {BP.get_motor_encoder(p)}")
-                print(''.join(status))
-            except IOError as error:
-                print(error)
-            
-            time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
-
-    except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
-
-
-def reset_motor_encoders() -> None:
-    try:
-        for port, _ in BP_MOTOR_PORTS:
-            BP.offset_motor_encoder(port, BP.get_motor_encoder(port))
-    except IOError as error:
-        print(error)
-
-
-def motor_dps_test() -> None:
-    intro = '''
-# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
-#
-# Results:  When you run this program, other motors' speed will be controlled by the position of motor {}. Manually rotate motor {}, and motors' speed will change.
-'''
-    try:
-        print("\nThe test will be held for every motor port of the BrickPi3.")
-        for main_port, number in BP_MOTOR_PORTS:
-            print("If you want to quit the test just press Ctrl+C.")
-            init_test(intro.format(number, number))
-            try:
-                other_ports = [p for p in BP_MOTOR_PORTS if p[0] != main_port]
-                other_ports_sum = sum(p[0] for p in other_ports)
-                reset_motor_encoders()
-                
-                BP.set_motor_power(main_port, BP.MOTOR_FLOAT)
-
-                while True:
-                    try:
-                        target = BP.get_motor_encoder(main_port)
-                    except IOError as error:
-                        print(error)
-                    
-                    BP.set_motor_dps(other_ports_sum, target)
-                    BP.set_motor_limits(other_ports_sum, 50, 200)
-                    
-                    status = [f"Target Degrees Per Second: {target}"]
-                    status.append("  Motor status ")
-                    for p, n in other_ports:
-                        status.append(f" {n}: {BP.get_motor_status(p)}")
-                    print(''.join(status))
-
-                    time.sleep(0.02)
-
-            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-                finish_test()
-    except KeyboardInterrupt:
-        finish_test()
-
-
-def motor_position_test() -> None:
-    intro = '''
-# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
-#
-# Results:  When you run this program, other motors will run to match the position of motor {}. Manually rotate motor {}, and motors will follow.
-'''
-    try:
-        print("\nThe test will be held for every motor port of the BrickPi3.")
-        for main_port, number in BP_MOTOR_PORTS:
-            print("If you want to quit the test just press Ctrl+C.")
-            init_test(intro.format(number, number))
-            try:
-                other_ports = [p for p in BP_MOTOR_PORTS if p[0] != main_port]
-                other_ports_sum = sum(p[0] for p in other_ports)
-                reset_motor_encoders()
-                
-                BP.set_motor_power(main_port, BP.MOTOR_FLOAT)
-                BP.set_motor_limits(other_ports_sum, 50, 200)
-
-                while True:
-                    try:
-                        target = BP.get_motor_encoder(main_port)
-                    except IOError as error:
-                        print(error)
-                    
-                    BP.set_motor_position(other_ports_sum, target)
-                    
-                    try:
-                        status = [f"Target: {target}"]
-                        status.append("  Motor position ")
-                        for p, n in other_ports:
-                            status.append(f" {n}: {BP.get_motor_encoder(p)}")
-                        print(''.join(status))
-                    except IOError as error:
-                        print(error)
-
-                    time.sleep(0.02)
-
-            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-                finish_test()
-    except KeyboardInterrupt:
-        finish_test()
-
-
-def motor_power_test() -> None:
-    intro = '''
-# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
-#
-# Results:  When you run this program, motors' power will be controlled by the position of motor {}. Manually rotate motor {}, and motors' power will change.
-'''
-    try:
-        print("\nThe test will be held for every motor port of the BrickPi3.")
-        for main_port, number in BP_MOTOR_PORTS:
-            print("If you want to quit the test just press Ctrl+C.")
-            init_test(intro.format(number, number))
-            try:
-                other_ports_sum = sum(p[0] for p in BP_MOTOR_PORTS if p[0] != main_port)
-                reset_motor_encoders()
-
-                while True:
-                    try:
-                        power = BP.get_motor_encoder(main_port) / 10
-                        if power > 100:
-                            power = 100
-                        elif power < -100:
-                            power = -100
-                    except IOError as error:
-                        print(error)
-                        power = 0
-                    BP.set_motor_power(other_ports_sum, power)
-
-                    time.sleep(0.02)
-
-            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-                finish_test()
-    except KeyboardInterrupt:
-        finish_test()
+    motors_readings(intro, "Encoder: ", BP.get_motor_encoder)
 
 
 def motor_status_test() -> None:
@@ -444,23 +350,163 @@ def motor_status_test() -> None:
 #
 # Results:  When you run this program, the status of each motor will be printed.
 '''
-    init_test(intro)
-    reset_motor_encoders()
-    
-    try:
-        while True:
-            try:
-                status = ["Motor status "]
-                for p, n in BP_MOTOR_PORTS:
-                    status.append(f" {n}: {BP.get_motor_status(p)}")
-                print(''.join(status))
-            except IOError as error:
-                print(error)
+    motors_readings(intro, "Motor status: ", BP.get_motor_status)
 
-            time.sleep(0.02)
+
+def reset_motor_encoders() -> None:
+    for port, _ in BP_MOTOR_PORTS:
+        BP.offset_motor_encoder(port, get_brickpi3_value(BP.get_motor_encoder, port))
+
+
+def get_other_ports(ports: list[tuple[int, str]], main_port: int) -> list[int]:
+    return [p for p in ports if p[0] != main_port]
+
+
+def get_ports_sum(ports: list[tuple[int, str]]) -> int:
+    return sum(p[0] for p in ports)
+
+
+def get_status_msg(msg_start: str, ports: list[tuple[int, str]], status_fun: Callable) -> str:
+    status = [msg_start]
+    for p, n in ports:
+        status.append(f" {n}: {get_brickpi3_value(status_fun, p)}")
+    return ''.join(status)
+
+
+def get_brickpi3_value(
+        get_fun: Callable,
+        port: int = None
+) -> any:
+    try:
+        return get_fun(port) if port else get_fun()
+    except IOError as error:
+        print(error)
+        return 0
+
+
+@run_for_specific_port("motor")
+def test_motors(
+    intro: str,
+    test_logic: Callable,
+    port_number: int = 1,
+    port_name: str = "A",
+) -> None:
+    init_test(intro.format(port_name, port_name))
+    try:
+        other_ports = get_other_ports(BP_MOTOR_PORTS, port_number)
+        other_ports_sum = get_ports_sum(other_ports)
+        reset_motor_encoders()
+
+        kwargs = {
+            "port_number": port_number,
+            "other_ports": other_ports,
+            "other_ports_sum": other_ports_sum
+        }
+        test_logic(**kwargs)
+        
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
         finish_test()
+
+
+def motor_dps_test() -> None:
+    intro = '''
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+#
+# Results:  When you run this program, other motors' speed will be controlled by the position of motor {}. Manually rotate motor {}, and motors' speed will change.
+'''
+    
+    def test_logic(
+        port_number: int,
+        other_ports: list[Port],
+        other_ports_sum: int
+    ) -> None:
+        BP.set_motor_power(port_number, BP.MOTOR_FLOAT)
+
+        while True:
+            target = get_brickpi3_value(BP.get_motor_encoder, port_number)
+            BP.set_motor_dps(other_ports_sum, target)
+            BP.set_motor_limits(other_ports_sum, 50, 200)
+
+            status = get_status_msg(
+                f"Target Degrees Per Second: {target}   Motor status ",
+                other_ports,
+                BP.get_motor_status
+            )
+            print(status)
+
+            time.sleep(0.02)
+
+    test_motors(intro, test_logic)
+
+
+def motor_position_test() -> None:
+    intro = '''
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+#
+# Results:  When you run this program, other motors will run to match the position of motor {}. Manually rotate motor {}, and motors will follow.
+'''
+    def test_logic(
+        port_number: int,
+        other_ports: list[Port],
+        other_ports_sum: int
+    ) -> None:
+        BP.set_motor_power(port_number, BP.MOTOR_FLOAT)
+        BP.set_motor_limits(other_ports_sum, 50, 200)
+
+        while True:
+            target = get_brickpi3_value(BP.get_motor_encoder, port_number)
+            BP.set_motor_position(other_ports_sum, target)
+            
+            status = get_status_msg(
+                f"Target: {target}   Motor position ",
+                other_ports,
+                BP.get_motor_encoder
+            )
+            print(status)
+
+            time.sleep(0.02)
+    
+    test_motors(intro, test_logic)
+
+
+def count_motor_power_based_on_encoder_value(
+        port: int,
+        divider: int,
+        max_power: int
+    ) -> int:
+    power = get_brickpi3_value(BP.get_motor_encoder, port) / divider
+
+    if power > max_power:
+        power = max_power
+    elif power < -max_power:
+        power = -max_power
+
+    return power
+
+
+def motor_power_test() -> None:
+    intro = '''
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+#
+# Results:  When you run this program, motors' power will be controlled by the position of motor {}. Manually rotate motor {}, and motors' power will change.
+'''
+    def test_logic(
+        port_number: int,
+        other_ports: list[Port],
+        other_ports_sum: int
+    ) -> None:
+        while True:
+            power = count_motor_power_based_on_encoder_value(
+                port_number,
+                10,
+                100
+            )
+            BP.set_motor_power(other_ports_sum, power)
+
+            time.sleep(0.02)
+
+    test_motors(intro, test_logic)
 
 
 def read_info() -> None:
@@ -472,19 +518,16 @@ def read_info() -> None:
     
     try:
         # Each of the following BP.get functions return a value that we want to display.
-        print("Manufacturer    : ", BP.get_manufacturer()    ) # read and display the serial number
-        print("Board           : ", BP.get_board()           ) # read and display the serial number
-        print("Serial Number   : ", BP.get_id()              ) # read and display the serial number
-        print("Hardware version: ", BP.get_version_hardware()) # read and display the hardware version
-        print("Firmware version: ", BP.get_version_firmware()) # read and display the firmware version
-        print("Battery voltage : ", BP.get_voltage_battery() ) # read and display the current battery voltage
-        print("9v voltage      : ", BP.get_voltage_9v()      ) # read and display the current 9v regulator voltage
-        print("5v voltage      : ", BP.get_voltage_5v()      ) # read and display the current 5v regulator voltage
-        print("3.3v voltage    : ", BP.get_voltage_3v3()     ) # read and display the current 3.3v regulator voltage
-        
-    except IOError as error:
-        print(error)
-
+        print("Manufacturer    : ", get_brickpi3_value(BP.get_manufacturer)    ) # read and display the serial number
+        print("Board           : ", get_brickpi3_value(BP.get_board)           ) # read and display the serial number
+        print("Serial Number   : ", get_brickpi3_value(BP.get_id)              ) # read and display the serial number
+        print("Hardware version: ", get_brickpi3_value(BP.get_version_hardware)) # read and display the hardware version
+        print("Firmware version: ", get_brickpi3_value(BP.get_version_firmware)) # read and display the firmware version
+        print("Battery voltage : ", get_brickpi3_value(BP.get_voltage_battery) ) # read and display the current battery voltage
+        print("9v voltage      : ", get_brickpi3_value(BP.get_voltage_9v)      ) # read and display the current 9v regulator voltage
+        print("5v voltage      : ", get_brickpi3_value(BP.get_voltage_5v)      ) # read and display the current 5v regulator voltage
+        print("3.3v voltage    : ", get_brickpi3_value(BP.get_voltage_3v3)     ) # read and display the current 3.3v regulator voltage
+        input("\nPress any key to continue ...")
     except brickpi3.FirmwareVersionError as error:
         print(error)
     finally:
@@ -529,12 +572,12 @@ def led_test() -> None:
 
 def main() -> None:
     options = [
-        ("Motors", motors_test),
         ("Motor encoder", motor_encoder_test),
-        ("Motor DPS", motor_dps_test),
-        ("Motor position", motor_position_test),
-        ("Motor power", motor_power_test),
         ("Motor status", motor_status_test),
+        ("Motor power", motor_power_test),
+        ("Motor position", motor_position_test),
+        ("Motor DPS", motor_dps_test),
+        ("Motors with touch sensor", motors_touch_sensor_test),
         ("Touch sensor", touch_sensor_test),
         ("Color sensor", color_sensor_color_test),
         ("Color sensor (raw)", color_sensor_raw_test),
@@ -557,8 +600,7 @@ def main() -> None:
             BP.reset_all()
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        BP.reset_all()        # Unconfigure the sensors, disable the motors, and restore the LED to the control of the BrickPi3 firmware.
-
+        finish_test()
 
 if __name__ == "__main__":
     main()
