@@ -6,6 +6,7 @@ import brickpi3 # import the BrickPi3 drivers
 
 from typing import TypeAlias
 from collections.abc import Callable
+from functools import wraps
 
 Option: TypeAlias = tuple[str, Callable]
 
@@ -98,38 +99,58 @@ def get_multi_mode_values(port, sensor_type: list[int] ,parser: Callable) -> Non
     return [parse_value(v, parser) for v in values]
 
 
-def test_sensor(intro: str, sensor_type: int | list[int], parser_type: str = None) -> None:
-    try:
-        print("\nThe test will be held for every sensor port of the BrickPi3.")
-        for port, number in BP_SENSOR_PORTS:
-            print("If you want to quit the test just press Ctrl+C.")
-            init_test(intro.format(number))
-            parser = get_value_parser(parser_type)
-            
-            if type(sensor_type) is int:
-                BP.set_sensor_type(port, sensor_type)
-            else:
-                BP.set_sensor_type(port, sensor_type[0])
-            
-            configure_sensor(port)
+def run_for_every_port(port_type):
+    def decorator(fun):
+        @wraps(fun)
+        def wrapper(*args, **kwargs):
+            ports = BP_SENSOR_PORTS if port_type == "sensor" else BP_MOTOR_PORTS
             try:
-                while True:
-                    try:
-                        if type(sensor_type) is int:
-                            value = BP.get_sensor(port)
-                            print(parse_value(value, parser))
-                        else:
-                            values = get_multi_mode_values(port, sensor_type, parser)
-                            print('   '.join(str(v) for v in values))
-                    except brickpi3.SensorError as error:
-                        print(error)
-                    
-                    time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
-
-            except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+                print()
+                print("The test will be held for every {} port of the BrickPi3.".format(port_type))
+                for port_number, port_name in ports:
+                    print("If you want to quit the test just press Ctrl+C.")
+                    kwargs["port_number"] = port_number
+                    kwargs["port_name"] = port_name
+                    fun(*args, **kwargs)
+            except KeyboardInterrupt:
                 finish_test()
-    except KeyboardInterrupt:
-        finish_test()
+        return wrapper
+    return decorator
+
+
+@run_for_every_port("sensor")
+def test_sensor(
+    intro: str,
+    sensor_type: int | list[int],
+    port_number: int = 1,
+    port_name: str = "1",
+    parser_type: str = None,
+    ) -> None:
+        init_test(intro.format(port_name))
+        parser = get_value_parser(parser_type)
+        
+        if type(sensor_type) is int:
+            BP.set_sensor_type(port_number, sensor_type)
+        else:
+            BP.set_sensor_type(port_number, sensor_type[0])
+        
+        configure_sensor(port_number)
+        try:
+            while True:
+                try:
+                    if type(sensor_type) is int:
+                        value = BP.get_sensor(port_number)
+                        print(parse_value(value, parser))
+                    else:
+                        values = get_multi_mode_values(port_number, sensor_type, parser)
+                        print('   '.join(str(v) for v in values))
+                except brickpi3.SensorError as error:
+                    print(error)
+                
+                time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
+
+        except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
+            finish_test()
 
 
 def touch_sensor_test() -> None:
