@@ -1,123 +1,12 @@
 from __future__ import print_function # use python 3 syntax but make it compatible with python 2
 from __future__ import division 
 
-import time     # import the time library for the sleep function
-import brickpi3 # import the BrickPi3 drivers
-
-from typing import TypeAlias
-from collections.abc import Callable
+from utils import *
+from brickpi3 import FirmwareVersionError
 from functools import wraps
 
-Option: TypeAlias = tuple[str, Callable]
-Port: TypeAlias = tuple[int, str]
 
-BP = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
-
-BP_SENSOR_PORTS = [
-    (BP.PORT_1, "1"),
-    (BP.PORT_2, "2"),
-    (BP.PORT_3, "3"),
-    (BP.PORT_4, "4")
-]
-
-BP_MOTOR_PORTS = [
-    (BP.PORT_A, "A"),
-    (BP.PORT_B, "B"),
-    (BP.PORT_C, "C"),
-    (BP.PORT_D, "D")
-]
-
-
-def get_color_from_color_sensor_value(value) -> str:
-    return ["none", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"][value]
-
-
-def print_options(options: list[Option]) -> None:
-    print("Test options:")
-
-    for i, op in enumerate(options):
-        print(f'{i}. {op[0]}')
-
-    print("Press Ctrl+C to exit the program.")
-
-
-def get_option_number(options: list[Option]) -> int:
-    option = ""
-
-    while not option.isnumeric() or int(option) not in range(len(options)):
-        option = input("Choose the number of option you want to test: ")
-
-    return int(option)
-
-
-def init_test(intro: str) -> None:
-    print(intro)
-    print("# To stop test press Ctrl+C.")
-    print()
-    input("Press any key to start the test")
-    print()
-
-
-def finish_test() -> None:
-    BP.reset_all()  # Unconfigure the sensors, disable the motors, and restore the LED to the control of the BrickPi3 firmware.
-    print('\n')
-
-
-def configure_sensor(port_number: int) -> None:
-    try:
-        BP.get_sensor(port_number)
-    except brickpi3.SensorError:
-        print("Configuring...")
-        error = True
-        while error:
-            time.sleep(0.1)
-            try:
-                BP.get_sensor(port_number)
-                error = False
-            except brickpi3.SensorError:
-                error = True
-    print("Configured.")
-
-
-def get_value_parser(parser: str) -> Callable:
-    return {
-        "COLOR": get_color_from_color_sensor_value
-    }.get(parser)
-
-
-def parse_value(value: any, parser: Callable) -> None:
-    return parser(value) if parser else value
-
-
-def get_multi_mode_values(port_number: int, sensor_type: list[int], parser: Callable) -> None:
-    values = []
-
-    for s_t in sensor_type:
-        BP.set_sensor_type(port_number, s_t)
-        time.sleep(0.02)
-        values.append(BP.get_sensor(port_number))
-
-    return [parse_value(v, parser) for v in values]   
-
-
-def print_available_ports(ports: list[Port]) -> None:
-    print("Available ports:",*[p[1] for p in ports])
-
-
-def get_ports(port_type: str) -> list[Port]:
-    return {
-        "sensor": BP_SENSOR_PORTS,
-        "motor": BP_MOTOR_PORTS
-    }.get(port_type, [])
-
-
-def get_port_decision(ports: list[Port]) -> str:
-    decision = ""
-
-    while decision != "all" and decision not in [p[1] for p in ports]:
-        decision = input("Choose port or type 'all' if you want to run tests for all ports: ")
-
-    return decision
+BP = BrickPi3() # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 
 
 def run_for_specific_port(port_type: str):
@@ -146,7 +35,7 @@ def run_for_specific_port(port_type: str):
                                 fun(*args, **kwargs)
                                 break
             except KeyboardInterrupt:
-                finish_test()
+                finish_test(BP)
         return wrapper
     return decorator
 
@@ -167,7 +56,7 @@ def test_sensor(
         else:
             BP.set_sensor_type(port_number, sensor_type[0])
         
-        configure_sensor(port_number)
+        configure_sensor(BP, port_number)
         try:
             while True:
                 try:
@@ -175,15 +64,15 @@ def test_sensor(
                         value = BP.get_sensor(port_number)
                         print(parse_value(value, parser))
                     else:
-                        values = get_multi_mode_values(port_number, sensor_type, parser)
+                        values = get_multi_mode_values(BP, port_number, sensor_type, parser)
                         print('   '.join(str(v) for v in values))
-                except brickpi3.SensorError as error:
+                except SensorError as error:
                     print(error)
                 
                 time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
 
         except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-            finish_test()
+            finish_test(BP)
 
 
 def touch_sensor_test() -> None:
@@ -273,14 +162,14 @@ def motors_touch_sensor_test() -> None:
 '''
     init_test(intro)
     BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH) # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
-    configure_sensor(BP.PORT_1)
+    configure_sensor(BP, BP.PORT_1)
     try:
         print("Press touch sensor on port 1 to run motors")
         value = 0
         while not value:
             try:
                 value = BP.get_sensor(BP.PORT_1)
-            except brickpi3.SensorError:
+            except SensorError:
                 pass
         
         speed = 0
@@ -288,7 +177,7 @@ def motors_touch_sensor_test() -> None:
         while True:
             try:
                 value = BP.get_sensor(BP.PORT_1)
-            except brickpi3.SensorError as error:
+            except SensorError as error:
                 print(error)
                 value = 0
             
@@ -313,12 +202,12 @@ def motors_touch_sensor_test() -> None:
             time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+        finish_test(BP)
 
 
 def motors_readings(intro: str, msg_start: str, test_function: Callable) -> None:
     init_test(intro)
-    reset_motor_encoders()
+    reset_motor_encoders(BP)
 
     try:
         while True:
@@ -332,7 +221,7 @@ def motors_readings(intro: str, msg_start: str, test_function: Callable) -> None
             time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+        finish_test(BP)
 
 
 def motor_encoder_test() -> None:
@@ -353,37 +242,6 @@ def motor_status_test() -> None:
     motors_readings(intro, "Motor status: ", BP.get_motor_status)
 
 
-def reset_motor_encoders() -> None:
-    for port, _ in BP_MOTOR_PORTS:
-        BP.offset_motor_encoder(port, get_brickpi3_value(BP.get_motor_encoder, port))
-
-
-def get_other_ports(ports: list[tuple[int, str]], main_port: int) -> list[int]:
-    return [p for p in ports if p[0] != main_port]
-
-
-def get_ports_sum(ports: list[tuple[int, str]]) -> int:
-    return sum(p[0] for p in ports)
-
-
-def get_status_msg(msg_start: str, ports: list[tuple[int, str]], status_fun: Callable) -> str:
-    status = [msg_start]
-    for p, n in ports:
-        status.append(f" {n}: {get_brickpi3_value(status_fun, p)}")
-    return ''.join(status)
-
-
-def get_brickpi3_value(
-        get_fun: Callable,
-        port: int = None
-) -> any:
-    try:
-        return get_fun(port) if port else get_fun()
-    except IOError as error:
-        print(error)
-        return 0
-
-
 @run_for_specific_port("motor")
 def test_motors(
     intro: str,
@@ -395,7 +253,7 @@ def test_motors(
     try:
         other_ports = get_other_ports(BP_MOTOR_PORTS, port_number)
         other_ports_sum = get_ports_sum(other_ports)
-        reset_motor_encoders()
+        reset_motor_encoders(BP)
 
         kwargs = {
             "port_number": port_number,
@@ -406,7 +264,7 @@ def test_motors(
         
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+        finish_test(BP)
 
 
 def motor_dps_test() -> None:
@@ -470,21 +328,6 @@ def motor_position_test() -> None:
     test_motors(intro, test_logic)
 
 
-def count_motor_power_based_on_encoder_value(
-        port: int,
-        divider: int,
-        max_power: int
-    ) -> int:
-    power = get_brickpi3_value(BP.get_motor_encoder, port) / divider
-
-    if power > max_power:
-        power = max_power
-    elif power < -max_power:
-        power = -max_power
-
-    return power
-
-
 def motor_power_test() -> None:
     intro = '''
 # Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
@@ -498,11 +341,14 @@ def motor_power_test() -> None:
     ) -> None:
         while True:
             power = count_motor_power_based_on_encoder_value(
+                BP,
                 port_number,
                 10,
                 100
             )
             BP.set_motor_power(other_ports_sum, power)
+
+            
 
             time.sleep(0.02)
 
@@ -528,10 +374,10 @@ def read_info() -> None:
         print("5v voltage      : ", get_brickpi3_value(BP.get_voltage_5v)      ) # read and display the current 5v regulator voltage
         print("3.3v voltage    : ", get_brickpi3_value(BP.get_voltage_3v3)     ) # read and display the current 3.3v regulator voltage
         input("\nPress any key to continue ...")
-    except brickpi3.FirmwareVersionError as error:
+    except FirmwareVersionError as error:
         print(error)
     finally:
-        finish_test()
+        finish_test(BP)
 
 
 def voltages_test() -> None:
@@ -547,7 +393,7 @@ def voltages_test() -> None:
             time.sleep(0.02)  # delay for 0.02 seconds (20ms) to reduce the Raspberry Pi CPU load.
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+        finish_test(BP)
 
 
 def led_test() -> None:
@@ -567,7 +413,7 @@ def led_test() -> None:
                 time.sleep(0.01)     # delay for 0.1 seconds (100ms) to reduce the Raspberry Pi CPU load and give time to see the LED pulsing.
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+        finish_test(BP)
 
 
 def main() -> None:
@@ -600,7 +446,7 @@ def main() -> None:
             BP.reset_all()
 
     except KeyboardInterrupt: # except the program gets interrupted by Ctrl+C on the keyboard.
-        finish_test()
+        finish_test(BP)
 
 if __name__ == "__main__":
     main()
