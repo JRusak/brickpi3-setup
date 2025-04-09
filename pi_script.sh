@@ -3,8 +3,7 @@
 PIHOME=/home/pi
 BRICKPI3_DIR=$PIHOME/BrickPi3
 UPDATE_BRICKPI_SCRIPT=$BRICKPI3_DIR/Install/update_brickpi3.sh
-FLASH_FIRMWARE_SCRIPT="$BRICKPI3_DIR/Firmware/"\
-"brickpi3samd_flash_firmware.sh"
+FLASH_FIRMWARE_SCRIPT=$PIHOME/flash_brickpi3_firmware.sh
 
 BRICKPI_REPO="https://github.com/JRusak/"\
 "brickpi3-setup.git"
@@ -73,6 +72,8 @@ main() {
     chmod +x $UPDATE_BRICKPI_SCRIPT
     bash $UPDATE_BRICKPI_SCRIPT --user-local \
         --bypass-gui-installation
+
+    chmod +x $FLASH_FIRMWARE_SCRIPT
 
     exit 0
 }
