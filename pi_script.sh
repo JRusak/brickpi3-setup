@@ -8,9 +8,6 @@ FLASH_FIRMWARE_SCRIPT=$PIHOME/flash_brickpi3_firmware.sh
 BRICKPI_REPO="https://github.com/JRusak/"\
 "brickpi3-setup.git"
 
-FW_VERSION_SCRIPT="$BRICKPI3_DIR/Software/Python/Examples/"\
-"Read_Info.py"
-
 install_git() {
     echo
     echo "Installing Git..."
