@@ -71,15 +71,8 @@ main() {
     get_brickpi_repo $BRICKPI_REPO
 
     chmod +x $UPDATE_BRICKPI_SCRIPT
-
-    chmod +x "$UPDATE_BRICKPI_SCRIPT"
-    bash "$UPDATE_BRICKPI_SCRIPT" --user-local \
+    bash $UPDATE_BRICKPI_SCRIPT --user-local \
         --bypass-gui-installation
-
-    chmod +x $FLASH_FIRMWARE_SCRIPT
-    bash $FLASH_FIRMWARE_SCRIPT
-
-    python3 $FW_VERSION_SCRIPT
 
     exit 0
 }
