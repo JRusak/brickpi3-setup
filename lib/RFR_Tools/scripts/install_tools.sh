@@ -110,7 +110,8 @@ update_install_aptget() {
                          python3-setuptools \
                          python3-pip \
                          libffi-dev \
-                         nodejs
+                         nodejs \
+                         libgpiod-dev
 }
 
 install_pythons() {

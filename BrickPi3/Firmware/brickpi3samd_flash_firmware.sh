@@ -14,9 +14,10 @@ if [ "$RPI_VERSION" == "RPI1" ] || [ "$RPI_VERSION" == "RPI0" ]; then
 elif [ "$RPI_VERSION" == "RPI2" ] || [ "$RPI_VERSION" == "RPI3" ] || [ "$RPI_VERSION" == "RPI3B+" ] || [ "$RPI_VERSION" == "RPI3A+" ] ; then
     # use rpi2 interface config file
     INTERFACE_FILE="rpi2.cfg"
-elif [ "$RPI_VERSION" == "RPI4" ] || [ "$RPI_VERSION" == "RPI5" ] ; then
-    # use rpi4 interface config file
+elif [ "$RPI_VERSION" == "RPI4" ]; then
     INTERFACE_FILE="rpi4.cfg"
+elif [ "$RPI_VERSION" == "RPI5" ]; then
+    INTERFACE_FILE="rpi5.cfg"
 fi
 
 if [ "$INTERFACE_FILE" == "none" ]; then
