@@ -37,7 +37,7 @@ create_user_with_sudo() {
     if id "$username" >/dev/null 2>&1; then
         echo "User '$username' already exists."
         echo "Recreating '$username'"
-        sudo userdel -r "$username" 2>/dev/null
+        sudo userdel -rf "$username" 2>/dev/null
     fi
 
     # Add new user
