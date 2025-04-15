@@ -21,3 +21,10 @@ su - pi
 ```
 
 password for the "pi" user is also just "pi"
+
+If you are using new BrickPi3 you also need to flash firmware onto the board.  
+After switching to user "pi" run below command:
+
+```sh
+./flash_brickpi3_firmware.sh
+```
