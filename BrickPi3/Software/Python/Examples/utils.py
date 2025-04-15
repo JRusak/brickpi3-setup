@@ -142,6 +142,7 @@ def print_options(options: list[Option]) -> None:
     for i, op in enumerate(options):
         print(f"{i}. {op[0]}")
 
+    print()
     print("Press Ctrl+C to exit the program.")
 
 
@@ -158,7 +159,7 @@ def init_test(intro: str) -> None:
     print(intro)
     print("# To stop test press Ctrl+C.")
     print()
-    input("Press any key to start the test")
+    input("Press enter to start the test")
     print()
 
 

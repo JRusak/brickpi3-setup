@@ -93,7 +93,9 @@ def touch_sensor_test() -> None:
     intro = """
 # Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 port {}.
 # 
-# Results:  When you run this program, you should see a 0 when the touch sensor is not pressed, and a 1 when the touch sensor is pressed.
+# Results:  When you run this program, you should see a 0
+#           when the touch sensor is not pressed, and a 1
+#           when the touch sensor is pressed.
 """
     test_sensor(intro, BP.SENSOR_TYPE.TOUCH)
 
@@ -120,7 +122,8 @@ def color_sensor_multi_mode_test() -> None:
     intro = """
 # Hardware: Connect an EV3 color sensor to BrickPi3 sensor port {}.
 # 
-# Results:  When you run this program it will rapidly switch between modes, taking readings, and then it will print the values.
+# Results:  When you run this program it will rapidly switch between modes,
+#           taking readings, and then it will print the values.
 """
     sensor_type = [
         BP.SENSOR_TYPE.EV3_COLOR_REFLECTED,
@@ -135,7 +138,8 @@ def gyro_sensor_test() -> None:
     intro = """
 # Hardware: Connect an EV3 gyro sensor to BrickPi3 sensor port {}.
 # 
-# Results:  When you run this program, the gyro's absolute rotation and rate of rotation will be printed.
+# Results:  When you run this program, the gyro's absolute
+#           rotation and rate of rotation will be printed.
 """
     test_sensor(intro, BP.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
 
@@ -169,12 +173,15 @@ def infrared_sensor_test() -> None:
 
 def motors_touch_sensor_test() -> None:
     intro = """
-# Hardware: Connect EV3 or NXT motor(s) to any of the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+# Hardware: Connect EV3 or NXT motor(s) to any of the BrickPi3 motor ports.
+#           Make sure that the BrickPi3 is running on a 9v power supply.
 #           Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
 #
-# Results:  When you run this program, the motor(s) speed will ramp up and down while the touch sensor is pressed. The position for each motor will be printed.
+# Results:  When you run this program, the motor(s) speed will ramp up and down
+#           while the touch sensor is pressed. The position for each motor will be printed.
 """
     init_test(intro)
+    reset_motor_encoders(BP)
     BP.set_sensor_type(
         BP.PORT_1, BP.SENSOR_TYPE.TOUCH
     )  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
@@ -210,7 +217,7 @@ def motors_touch_sensor_test() -> None:
             # Set the motor speed for all four motors
             BP.set_motor_power(BP.PORT_A + BP.PORT_B + BP.PORT_C + BP.PORT_D, speed)
 
-            status = get_status_msg("Encoder: ", BP_MOTOR_PORTS, BP.get_motor_encoder)
+            status = get_status_msg(f"Touch sensor: {value} Encoder: ", BP_MOTOR_PORTS, BP.get_motor_encoder)
             print(status)
 
             time.sleep(
@@ -246,7 +253,9 @@ def motor_encoder_test() -> None:
     intro = """
 # Hardware: Connect EV3 or NXT motor(s) to any of the BrickPi3 motor ports.
 # 
-# Results:  When you run this program, you should see the encoder value for each motor. By manually rotating a motor, the count should change by 1 for every degree of rotation.
+# Results:  When you run this program, you should see the encoder
+#           value for each motor. By manually rotating a motor,
+#           the count should change by 1 for every degree of rotation.
 """
     motors_readings(intro, "Encoder: ", BP.get_motor_encoder)
 
@@ -288,9 +297,12 @@ def test_motors(
 
 def motor_dps_test() -> None:
     intro = """
-# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports.
+#           Make sure that the BrickPi3 is running on a 9v power supply.
 #
-# Results:  When you run this program, other motors' speed will be controlled by the position of motor {}. Manually rotate motor {}, and motors' speed will change.
+# Results:  When you run this program, other motors' speed will be
+#           controlled by the position of motor {}. Manually rotate
+#           motor {}, and motors' speed will change.
 """
 
     def test_logic(
@@ -301,7 +313,7 @@ def motor_dps_test() -> None:
         while True:
             target = get_brickpi3_value(BP.get_motor_encoder, port_number)
             BP.set_motor_dps(other_ports_sum, target)
-            BP.set_motor_limits(other_ports_sum, 50, 200)
+            BP.set_motor_limits(other_ports_sum, 100, 500)
 
             status = get_status_msg(
                 f"Target Degrees Per Second: {target}   Motor status ",
@@ -317,9 +329,12 @@ def motor_dps_test() -> None:
 
 def motor_position_test() -> None:
     intro = """
-# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports.
+#           Make sure that the BrickPi3 is running on a 9v power supply.
 #
-# Results:  When you run this program, other motors will run to match the position of motor {}. Manually rotate motor {}, and motors will follow.
+# Results:  When you run this program, other motors will run to match
+#           the position of motor {}. Manually rotate motor {},
+#           and motors will follow.
 """
 
     def test_logic(
@@ -344,9 +359,12 @@ def motor_position_test() -> None:
 
 def motor_power_test() -> None:
     intro = """
-# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports. Make sure that the BrickPi3 is running on a 9v power supply.
+# Hardware: Connect EV3 or NXT motors to the BrickPi3 motor ports.
+#           Make sure that the BrickPi3 is running on a 9v power supply.
 #
-# Results:  When you run this program, motors' power will be controlled by the position of motor {}. Manually rotate motor {}, and motors' power will change.
+# Results:  When you run this program, motors' power will be controlled
+#           by the position of motor {}. Manually rotate motor {},
+#           and motors' power will change.
 """
 
     def test_logic(
@@ -355,6 +373,13 @@ def motor_power_test() -> None:
         while True:
             power = count_motor_power_based_on_encoder_value(BP, port_number, 10, 100)
             BP.set_motor_power(other_ports_sum, power)
+
+            status = get_status_msg(
+                f"Target power: {power}   Motor status ",
+                other_ports,
+                BP.get_motor_status,
+            )
+            print(status)
 
             time.sleep(0.02)
 
